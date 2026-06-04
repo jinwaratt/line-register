@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+
+  <h3 id="status">กำลังลงทะเบียน...</h3>
+  <p id="debug-step" style="color: #888; font-size: 14px; background: #eee; padding: 10px; border-radius: 5px;">
+    ระบบกำลังเริ่มทำงาน...
+  </p>
+
+<script>
+const LIFF_ID = "2010292739-3B9N5VGJ";
+
+// ⚠️ นำลิงก์ Web App (ลงท้ายด้วย /exec) จาก Google Apps Script มาวางตรงนี้ตรงๆ ได้เลยครับ
+const WEB_APP_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+
+async function main() {
+  const showStep = (text) => {
+    document.getElementById("debug-step").innerText = text;
+  };
+
+  try {
+    showStep("➔ ขั้นตอนที่ 1: กำลังเชื่อมต่อระบบ LINE LIFF SDK...");
+    await liff.init({ liffId: LIFF_ID });
+
+    showStep("➔ ขั้นตอนที่ 2: กำลังตรวจสอบการเข้าสู่ระบบ...");
+    if (!liff.isLoggedIn()) {
+      showStep("➔ ขั้นตอนที่ 3: กำลังเด้งไปหน้า Login...");
+      liff.login();
+      return;
+    }
+
+    showStep("➔ ขั้นตอนที่ 4: กำลังดึงข้อมูลโปรไฟล์...");
+    const profile = await liff.getProfile();
+
+    showStep("➔ ขั้นตอนที่ 5: กำลังส่งข้อมูลไปยัง Google Sheet...");
+    const formData = new URLSearchParams();
+    formData.append("userId", profile.userId);
+    formData.append("displayName", profile.displayName);
+
+    const res = await fetch(WEB_APP_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    showStep("➔ ขั้นตอนที่ 6: กำลังรอ Google Sheet ตอบกลับ...");
+    const resultText = await res.text();
+
+    document.getElementById("status").innerText = "ลงทะเบียนสำเร็จ";
+    showStep("🎉 เสร็จสิ้น! บันทึกข้อมูลลง Sheet เรียบร้อยแล้ว");
+
+  } catch (err) {
+    document.getElementById("status").innerText = "เกิดข้อผิดพลาด";
+    showStep("❌ พังเนื่องจาก: " + err.toString());
+  }
+}
+
+window.onload = function() {
+  main();
+};
+</script>
+
+</body>
+</html>
